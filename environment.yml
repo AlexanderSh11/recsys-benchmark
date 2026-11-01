@@ -7,4 +7,4 @@ dependencies:
   - pip:
     - pandas
     - scikit-learn
-    - jupyter
+    - ipykernel
