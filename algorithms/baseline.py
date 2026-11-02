@@ -2,13 +2,15 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import pairwise_distances
 
+from algorithms.base import BaseRecommender
 
-class UserBasedCF:
+
+class UserBasedCF(BaseRecommender):
+    name = "UserBasedCF"
+
     def __init__(
         self,
         top_k: int = 100,
-        user_id_col: str = "userId",
-        movie_id_col: str = "movieId",
     ):
         self.top_k = top_k
         self.user_similarity = None
@@ -18,8 +20,8 @@ class UserBasedCF:
         self.user_to_index = None
         self.item_to_index = None
         self.index_to_item = None
-        self.user_id_col = user_id_col
-        self.movie_id_col = movie_id_col
+        self._pred = None
+        self.rating_for_train_items = -1e9
 
     def fit(self, train_df: pd.DataFrame):
         self.user_to_index = {
@@ -41,6 +43,7 @@ class UserBasedCF:
         self.user_similarity = 1 - pairwise_distances(
             self.train_matrix, metric="cosine"
         )
+        self._pred = None
         return self
 
     def predict(self, top_k=None) -> np.ndarray:
@@ -69,10 +72,41 @@ class UserBasedCF:
                 user_means[u],
             )
             pred[u] = np.clip(pred[u], 0, 10)
-            pred[u][self.train_matrix[u] > 0] = -np.inf
+            pred[u][self.train_matrix[u] > 0] = self.rating_for_train_items
         return pred
 
+    def get_pred_matrix(self):
+        if self._pred is None:
+            self._pred = self.predict()
+        return self._pred
+
+    def recommend(self, user_ids: list, n: int = 10) -> dict[int, list[int]]:
+        if self.train_matrix is None:
+            raise RuntimeError("Модель не была обучена")
+
+        if not hasattr(self, "_pred") or self._pred is None:
+            self._pred = self.predict()
+
+        result = {}
+        for uid in user_ids:
+            if uid not in self.user_to_index:
+                continue
+            u = self.user_to_index[uid]
+            scores = self._pred[u]
+
+            k = min(n, int((scores > self.rating_for_train_items).sum()))
+            if k == 0:
+                result[uid] = []
+                continue
+
+            top_k = np.argpartition(-scores, k - 1)[:k]
+            top_k = top_k[np.argsort(-scores[top_k])]
+
+            result[uid] = [self.index_to_item[i] for i in top_k]
+        return result
+
     def info(self):
+        print(self.name)
         n_users = self.n_users
         n_items = self.n_items
         n_ratings = int((self.train_matrix > 0).sum())

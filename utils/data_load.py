@@ -8,7 +8,13 @@ def load_dataset(path: str) -> pd.DataFrame:
     return df
 
 
-def make_subset(df, n_ratings, user_id_col="userId", min_ratings=20, random_state=42):
+def make_subset(
+    df: pd.DataFrame,
+    n_ratings: int,
+    user_id_col: str = "userId",
+    min_ratings: int = 20,
+    random_state: int = 42,
+) -> pd.DataFrame:
     if n_ratings >= len(df):
         return df.reset_index(drop=True)
 
@@ -34,13 +40,13 @@ def split_train_test_by_time(
     timestamp_col: str = "timestamp",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = df.sort_values([user_id_col, timestamp_col]).reset_index(drop=True)
-    
+
     df["rank"] = df.groupby(user_id_col).cumcount(ascending=False)
     df["n_user"] = df.groupby(user_id_col)[user_id_col].transform("size")
     df["n_test"] = (df["n_user"] * test_frac).round().astype(int).clip(lower=1)
-    
+
     df.loc[df["n_user"] < 2, "n_test"] = 0
-    
+
     test = df[df["rank"] < df["n_test"]].drop(columns=["rank", "n_user", "n_test"])
     train = df[df["rank"] >= df["n_test"]].drop(columns=["rank", "n_user", "n_test"])
     return train.reset_index(drop=True), test.reset_index(drop=True)

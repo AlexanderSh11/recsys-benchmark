@@ -32,3 +32,10 @@ def ndcg_at_k(pred: np.ndarray, test_matrix: np.ndarray, k: int = 10) -> float:
         if idcg > 0:
             ndcgs.append(dcg / idcg)
     return float(np.mean(ndcgs)) if ndcgs else 0.0
+
+
+def test_matrix_info(test_matrix: np.ndarray):
+    print(f"Количество ненулевых оценок в тестовой матрице: {(test_matrix > 0).sum():,}")
+    print(f"Количество релевантных оценок в тестовой матрице (>=3.5): {(test_matrix >= 3.5).sum():,}")
+    print(f"Пользователей с ненулевыми оценками в тестовой матрице: {(test_matrix > 0).any(axis=1).sum():,}")
+    print(f"Пользователей с релевантными оценками в тестовой матрице: {(test_matrix >= 3.5).any(axis=1).sum():,}")
