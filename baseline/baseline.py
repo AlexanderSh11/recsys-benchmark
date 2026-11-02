@@ -69,4 +69,17 @@ class UserBasedCF:
                 user_means[u],
             )
             pred[u] = np.clip(pred[u], 0, 10)
+            pred[u][self.train_matrix[u] > 0] = -np.inf
         return pred
+
+    def info(self):
+        n_users = self.n_users
+        n_items = self.n_items
+        n_ratings = int((self.train_matrix > 0).sum())
+        sparsity = n_ratings / (n_users * n_items) * 100 if n_users and n_items else 0
+
+        print(f"Количество пользователей: {n_users:,}")
+        print(f"Количество объектов: {n_items:,}")
+        print(f"Количество оценок в train: {n_ratings:,}")
+        print(f"Разреженность матрицы оценок: {sparsity:.4f}%")
+        print(f"Размер матрицы схожестей: {n_users**2 * 4 / 1024**3:.2f} ГБ")
