@@ -11,18 +11,23 @@ def recall_at_k(
         if not relevant:
             continue
         top_k = set(np.argsort(pred[u])[::-1][:k])
-        recalls.append(len(relevant & top_k)) / len(relevant)
+        recalls.append(len(relevant & top_k) / len(relevant))
     return float(np.mean(recalls)) if recalls else 0.0
 
 
 def ndcg_at_k(pred: np.ndarray, test_matrix: np.ndarray, k: int = 10) -> float:
     ndcgs = []
+    discounts = np.log2(np.arange(2, k + 2))
     for u in range(pred.shape[0]):
         top_k = np.argsort(pred[u])[::-1][:k]
         gains = test_matrix[u][top_k]
-        discounts = np.log2(np.arange(2, k + 2))
-        dcg = np.sum(gains / discounts)
+        if not (test_matrix[u] > 0).any():
+            continue
+
         ideal = np.sort(test_matrix[u][test_matrix[u] > 0])[::-1][:k]
+        ideal = np.pad(ideal, (0, k - len(ideal)), constant_values=0)
+        
+        dcg = np.sum(gains / discounts)
         idcg = np.sum(ideal / discounts)
         if idcg > 0:
             ndcgs.append(dcg / idcg)
