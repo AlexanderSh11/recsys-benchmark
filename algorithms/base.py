@@ -20,6 +20,11 @@ class BaseRecommender(ABC):
         ...
 
     @abstractmethod
+    def get_pred_matrix(self):
+        """Возвращает матрицу предсказаний (для baseline) или None (для ALS)"""
+        ...
+
+    @abstractmethod
     def info(self):
         """Возвращает информацию о модели"""
         ...
