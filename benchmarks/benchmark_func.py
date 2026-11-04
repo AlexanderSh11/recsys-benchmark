@@ -1,8 +1,11 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from metrics.metrics import MatrixMetrics, RecsMetrics
 from utils.timer import timer
+
+FIGSIZE = (12, 6)
 
 
 def build_test_matrix(model, test):
@@ -67,13 +70,39 @@ def run_benchmark(
     return results
 
 
+def mean_result(results: list[dict], param: str):
+    return np.mean([r[param] for r in results])
+
+
 def print_summary(results: dict):
     model = results[0]["model"]
     model.info()
-    print("Среднее train_time", np.mean([r["train_time"] for r in results]))
-    print("Среднее pred_time", np.mean([r["pred_time"] for r in results]))
-    print("Средний recall", np.mean([r["recall"] for r in results]))
-    print("Средний ndcg", np.mean([r["ndcg"] for r in results]))
+    print("Среднее train_time", mean_result(results=results, param="train_time"))
+    print("Среднее pred_time", mean_result(results=results, param="pred_time"))
+    print("Средний recall", mean_result(results=results, param="recall"))
+    print("Средний ndcg", mean_result(results=results, param="ndcg"))
     test_matrix = results[0]["test_matrix"]
     if test_matrix is not None:
         MatrixMetrics.test_matrix_info(test_matrix)
+
+
+def show_graph(results_df: pd.DataFrame, params: list[str], metrics: list[str], save_dir: str = "graphs"):
+    if not params or not metrics:
+        raise ValueError("params и metrics не могут быть пустыми")
+    
+    for param in params:
+        _, ax = plt.subplots(1, len(metrics), figsize=FIGSIZE)
+        ax = np.atleast_1d(ax)
+
+        for i, metric in enumerate(metrics):
+            ax[i].plot(results_df[param], results_df[metric], marker="o")
+            ax[i].set_xlabel(param)
+            ax[i].set_ylabel(metric)
+            ax[i].set_title(f"Зависимость {metric} от {param}")
+            ax[i].grid(True)
+
+        plt.tight_layout()
+        if save_dir is not None:
+            path = f"{save_dir}/{param}.png"
+            plt.savefig(path, dpi=150, bbox_inches="tight")
+        plt.show()
