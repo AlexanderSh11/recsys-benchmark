@@ -1,3 +1,4 @@
+import gc
 import itertools
 
 import matplotlib.pyplot as plt
@@ -5,9 +6,10 @@ import numpy as np
 import pandas as pd
 
 from metrics.metrics import MatrixMetrics, RecsMetrics
+from utils.memory_usage import memory_usage
 from utils.timer import timer
 
-FIGSIZE = (6, 6)
+FIGSIZE = (8, 6)
 
 
 def build_test_matrix(model, test):
@@ -38,11 +40,18 @@ def run_benchmark(
     for _ in range(n_runs):
         model = model_factory()
 
-        with timer(f"Обучение {model.name}") as train_time:
+        with (
+            memory_usage(f"Обучение {model.label()}") as train_mem,
+            timer(f"Обучение {model.label()}") as train_time,
+        ):
             model.fit(train)
 
         test_users = test[model.user_id_col].unique().tolist()
-        with timer(f"Выдача рекомендаций {model.name}") as pred_time:
+
+        with (
+            memory_usage(f"Выдача рекомендаций {model.label()}") as pred_mem,
+            timer(f"Выдача рекомендаций {model.label()}") as pred_time,
+        ):
             recs = model.recommend(test_users, n=k)
 
         pred_matrix = model.get_pred_matrix()
@@ -58,17 +67,19 @@ def run_benchmark(
 
         results.append(
             {
-                "model": model,
-                "metrics": metrics,
+                "model": model.name,
                 "train_size": len(train),
                 "test_size": len(test),
                 "train_time": train_time["elapsed_time"],
                 "pred_time": pred_time["elapsed_time"],
+                "train_mem_delta": train_mem["delta_memory_usage"],
+                "pred_mem_delta": pred_mem["delta_memory_usage"],
                 "recall": recall,
                 "ndcg": ndcg,
-                "test_matrix": test_matrix,
             }
         )
+        del pred_matrix, metrics, recs, test_matrix, model
+        gc.collect()
 
     return results
 
@@ -78,15 +89,13 @@ def mean_result(results: list[dict], param: str):
 
 
 def print_summary(results: dict):
-    model = results[0]["model"]
-    model.info()
+    print("Модель", results[0]["model"])
     print("Среднее train_time", mean_result(results=results, param="train_time"))
     print("Среднее pred_time", mean_result(results=results, param="pred_time"))
+    print(f"Средний прирост RSS процесса при обучении: {mean_result(results=results, param='train_mem_delta'):.3f} MB")
+    print(f"Средний прирост RSS процесса при прогнозе: {mean_result(results=results, param='pred_mem_delta'):.3f} MB")
     print("Средний recall", mean_result(results=results, param="recall"))
     print("Средний ndcg", mean_result(results=results, param="ndcg"))
-    test_matrix = results[0]["test_matrix"]
-    if test_matrix is not None:
-        MatrixMetrics.test_matrix_info(test_matrix)
 
 
 def params_search(
@@ -126,6 +135,8 @@ def params_search(
                 **kwargs,
                 "train_time": mean_result(results_param, "train_time"),
                 "pred_time": mean_result(results_param, "pred_time"),
+                "train_mem_delta": mean_result(results_param, "train_mem_delta"),
+                "pred_mem_delta": mean_result(results_param, "pred_mem_delta"),
                 f"recall@{k}": mean_result(results_param, "recall"),
                 f"ndcg@{k}": mean_result(results_param, "ndcg"),
             }
@@ -139,28 +150,54 @@ def show_graph(
     params: list[str],
     metrics: list[str],
     save_dir: str = "graphs",
+    max_lines: int | None = 10,
+    group_by_params=None,
 ):
     for param in params:
-        other_params = [c for c in params if c != param]
+        if group_by_params is not None and param in group_by_params:
+            other_params = [p for p in group_by_params if p != param]
+        else:
+            other_params = [p for p in params if p != param]
         for metric in metrics:
             _, ax = plt.subplots(figsize=FIGSIZE)
-            
+
             if other_params:
-                for comb, df_sub in results_df.groupby(other_params):
-                    df_sub = df_sub.sort_values(param)
-                    label = ", ".join(f"{k}={v}" for k, v in zip(other_params, comb))
-                    ax.plot(df_sub[param], df_sub[metric], marker="o", label=label)
-                ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0.)
+                groups = list(results_df.groupby(other_params))
+                cmap = plt.get_cmap("turbo")
+                n = len(groups)
+                if max_lines is not None and n > max_lines:
+                    # усредняем - одна линия
+                    agg = results_df.groupby(param)[metric].agg(["mean", "std"])
+                    ax.errorbar(
+                        agg.index, agg["mean"], yerr=agg["std"],
+                        marker="o", capsize=3,
+                        label=f"mean +- std по {len(other_params)} параметрам.",
+                    )
+                else:
+                    for i, (comb, df_sub) in enumerate(groups):
+                        df_sub = df_sub.sort_values(param)
+                        label = ", ".join(f"{k}={v}" for k, v in zip(other_params, comb))
+                        color = cmap(i / max(n - 1, 1))
+                        ax.plot(
+                            df_sub[param], df_sub[metric],
+                            marker="o", markersize=4,
+                            color=color, label=label,
+                        )
+                ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0.0)
             else:
                 df = results_df.sort_values(param)
                 ax.plot(df[param], df[metric], marker="o")
-            
+
             ax.set_xlabel(param)
             ax.set_ylabel(metric)
             ax.set_title(f"Зависимость {metric} от {param}")
             ax.grid(True, alpha=0.3)
-            
+
             plt.tight_layout()
             if save_dir:
-                plt.savefig(f"{save_dir}/{param}_{metric.replace('@', '_')}.png", dpi=150, bbox_inches="tight")
+                plt.savefig(
+                    f"{save_dir}/{param}_{metric.replace('@', '_')}.png",
+                    dpi=150,
+                    bbox_inches="tight",
+                )
             plt.show()
