@@ -22,6 +22,9 @@ class UserBasedCF(BaseRecommender):
         self.index_to_item = None
         self._pred = None
         self.rating_for_train_items = -1e9
+        self.params = {
+            "top_k": self.top_k,
+        }
 
     def fit(self, train_df: pd.DataFrame):
         self.user_to_index = {
@@ -77,8 +80,8 @@ class UserBasedCF(BaseRecommender):
 
     def get_pred_matrix(self):
         if self._pred is None:
-            self._pred = self.predict()
-        return self._pred
+            self._pred = self.predict().copy()
+        return self._pred.copy()
 
     def recommend(self, user_ids: list, n: int = 10) -> dict[int, list[int]]:
         if self.train_matrix is None:

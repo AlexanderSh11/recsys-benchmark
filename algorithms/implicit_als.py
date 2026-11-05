@@ -22,6 +22,13 @@ class ImplicitALS(BaseRecommender):
         self.alpha = alpha
         self.random_state = random_state
 
+        self.params = {
+            "factors": self.factors,
+            "iterations": self.iterations,
+            "regularization": self.regularization,
+            "alpha": self.alpha,
+        }
+
         self.model = None
         self.user_items_sparse = None
 

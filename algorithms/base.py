@@ -8,6 +8,7 @@ class BaseRecommender(ABC):
     user_id_col: str = "userId"
     movie_id_col: str = "movieId"
     rating_col: str = "rating"
+    params: dict
 
     @abstractmethod
     def fit(self, train_df: pd.DataFrame) -> "BaseRecommender":
@@ -28,3 +29,8 @@ class BaseRecommender(ABC):
     def info(self):
         """Возвращает информацию о модели"""
         ...
+
+    def label(self) -> str:
+        """Возвращает имя модели и параметры в виде строки"""
+        params_str = ", ".join(f"{k}={v}" for k, v in self.params.items())
+        return f"{self.name}({params_str})"
