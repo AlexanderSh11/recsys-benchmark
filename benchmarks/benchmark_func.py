@@ -173,6 +173,7 @@ def show_graph(
                         marker="o", capsize=3,
                         label=f"mean +- std по {len(other_params)} параметрам.",
                     )
+                    file_name = f"{save_dir}/{param}_{metric.replace('@', '_')}_mean_of_{n}_configs.png"
                 else:
                     for i, (comb, df_sub) in enumerate(groups):
                         df_sub = df_sub.sort_values(param)
@@ -183,10 +184,12 @@ def show_graph(
                             marker="o", markersize=4,
                             color=color, label=label,
                         )
+                    file_name = f"{save_dir}/{param}_{metric.replace('@', '_')}_all_{n}_lines.png"
                 ax.legend(bbox_to_anchor=(1.02, 1), loc="upper left", borderaxespad=0.0)
             else:
                 df = results_df.sort_values(param)
                 ax.plot(df[param], df[metric], marker="o")
+                file_name = f"{save_dir}/{param}_{metric.replace('@', '_')}_single_line.png"
 
             ax.set_xlabel(param)
             ax.set_ylabel(metric)
@@ -196,7 +199,7 @@ def show_graph(
             plt.tight_layout()
             if save_dir:
                 plt.savefig(
-                    f"{save_dir}/{param}_{metric.replace('@', '_')}.png",
+                    file_name,
                     dpi=150,
                     bbox_inches="tight",
                 )
