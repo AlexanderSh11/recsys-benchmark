@@ -16,6 +16,7 @@
 - [Установка и запуск](#установка-и-запуск)
 - [Алгоритмы](#алгоритмы)
 - [Метрики](#метрики)
+- [Графики](#графики)
 - [Структура проекта](#структура-проекта)
 
 ## Результаты
@@ -115,6 +116,75 @@ unzip ml-32m.zip -d data/raw/
 - train_mem_delta - пиковый прирост RSS при обучении, через utils.memory_usage.memory_usage.
 
 - pred_mem_delta - пиковый прирост RSS при выдаче рекомендаций, через utils.memory_usage.memory_usage.
+
+## Графики
+
+### UserBasedCF
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="benchmarks/graphs/UserBasedCF/top_k_pred_time_single_line.png" alt="pred_time от top_k" height="300"/>
+        <br/>
+        <b>Время выдачи рекомендаций</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/UserBasedCF/top_k_recall_10_single_line.png" alt="Recall@10 от top_k" height="300"/>
+        <br/>
+        <b>Recall@10</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/UserBasedCF/top_k_ndcg_10_single_line.png" alt="NDCG@10 от top_k" height="300"/>
+        <br/>
+        <b>NDCG@10</b>
+      </td>
+    </tr>
+  </table>
+</div>
+
+### ImplicitALS - зависимость метрик от гиперпараметров (mean +- std по остальным параметрам)
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/factors_ndcg_10_mean_of_80_configs.png" alt="NDCG@10 от factors" height="300"/>
+        <br/>
+        <b>NDCG@10 от factors</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/iterations_ndcg_10_mean_of_80_configs.png" alt="NDCG@10 от iterations" height="300"/>
+        <br/>
+        <b>NDCG@10 от iterations</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/alpha_ndcg_10_mean_of_80_configs.png" alt="NDCG@10 от alpha" height="300"/>
+        <br/>
+        <b>NDCG@10 от alpha</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/factors_recall_10_mean_of_80_configs.png" alt="Recall@10 от factors" height="300"/>
+        <br/>
+        <b>Recall@10 от factors</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/factors_train_time_mean_of_80_configs.png" alt="train_time от factors" height="300"/>
+        <br/>
+        <b>train_time от factors</b>
+      </td>
+      <td align="center">
+        <img src="benchmarks/graphs/implicitALS/factors_ndcg_10_all_16_lines.png" alt="NDCG@10 от factors (все линии)" height="300"/>
+        <br/>
+        <b>NDCG@10 от factors</b>
+      </td>
+    </tr>
+  </table>
+</div>
+
+> Полные результаты подбора (зависимости от `factors`, `iterations`, `regularization`, `alpha` для `train_time`, `Recall@10`, `NDCG@10`) - в папке [`benchmarks/graphs/`](benchmarks/graphs/).
 
 ## Структура проекта
 ```
