@@ -22,6 +22,7 @@ class ImplicitALS(BaseRecommender):
         self.regularization = regularization
         self.iterations = iterations
         self.alpha = alpha
+        self.threshold = threshold
         self.random_state = random_state
 
         self.params = {
