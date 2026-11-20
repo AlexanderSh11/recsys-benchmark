@@ -73,7 +73,9 @@ def run_benchmark(
                 "train_time": train_time["elapsed_time"],
                 "pred_time": pred_time["elapsed_time"],
                 "train_mem_delta": train_mem["delta_memory_usage"],
+                "train_mem_peak": train_mem["peak_memory_usage"],
                 "pred_mem_delta": pred_mem["delta_memory_usage"],
+                "pred_mem_peak": train_mem["peak_memory_usage"],
                 "recall": recall,
                 "ndcg": ndcg,
             }
@@ -93,7 +95,9 @@ def print_summary(results: dict):
     print("Среднее train_time", mean_result(results=results, param="train_time"))
     print("Среднее pred_time", mean_result(results=results, param="pred_time"))
     print(f"Средний прирост RSS процесса при обучении: {mean_result(results=results, param='train_mem_delta'):.3f} MB")
+    print(f"Средний пиковый RSS процесса при обучении: {mean_result(results=results, param='train_mem_peak'):.3f} MB")
     print(f"Средний прирост RSS процесса при прогнозе: {mean_result(results=results, param='pred_mem_delta'):.3f} MB")
+    print(f"Средний пиковый RSS процесса при прогнозе: {mean_result(results=results, param='pred_mem_peak'):.3f} MB")
     print("Средний recall", mean_result(results=results, param="recall"))
     print("Средний ndcg", mean_result(results=results, param="ndcg"))
 
@@ -136,7 +140,9 @@ def params_search(
                 "train_time": mean_result(results_param, "train_time"),
                 "pred_time": mean_result(results_param, "pred_time"),
                 "train_mem_delta": mean_result(results_param, "train_mem_delta"),
+                "train_mem_peak": mean_result(results_param, "train_mem_peak"),
                 "pred_mem_delta": mean_result(results_param, "pred_mem_delta"),
+                "pred_mem_peak": mean_result(results_param, "pred_mem_peak"),
                 f"recall@{k}": mean_result(results_param, "recall"),
                 f"ndcg@{k}": mean_result(results_param, "ndcg"),
             }
