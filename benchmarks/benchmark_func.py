@@ -75,7 +75,7 @@ def run_benchmark(
                 "train_mem_delta": train_mem["delta_memory_usage"],
                 "train_mem_peak": train_mem["peak_memory_usage"],
                 "pred_mem_delta": pred_mem["delta_memory_usage"],
-                "pred_mem_peak": train_mem["peak_memory_usage"],
+                "pred_mem_peak": pred_mem["peak_memory_usage"],
                 "recall": recall,
                 "ndcg": ndcg,
             }
