@@ -86,9 +86,9 @@ class ImplicitALS(BaseRecommender):
 
             ids, _ = self.model.recommend(
                 userid=u,
-                user_items=self.user_items_sparse,
+                user_items=self.user_items_sparse[u],
                 N=n,
-                filter_already_liked_items=False,
+                filter_already_liked_items=True,
             )
 
             result[uid] = [self.index_to_item[i] for i in ids]
