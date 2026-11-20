@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from implicit.als import AlternatingLeastSquares
 from scipy.sparse import csr_matrix
@@ -14,6 +15,7 @@ class ImplicitALS(BaseRecommender):
         regularization: float = 0.1,
         iterations: int = 15,
         alpha: float = 40.0,
+        threshold: float = 3.5,
         random_state: int = 42,
     ):
         self.factors = factors
@@ -53,16 +55,24 @@ class ImplicitALS(BaseRecommender):
         self.n_items = len(self.item_to_index)
         self.n_ratings = len(train_df)
 
-        user_idxs = train_df[self.user_id_col].map(self.user_to_index).values
-        item_idxs = train_df[self.movie_id_col].map(self.item_to_index).values
-
-        ratings = train_df[self.rating_col].values
-
+        # Матрица всех просмотренных фильмов
+        all_users = train_df[self.user_id_col].map(self.user_to_index).values
+        all_items = train_df[self.movie_id_col].map(self.item_to_index).values
         self.user_items_sparse = csr_matrix(
-            (ratings * self.alpha, (user_idxs, item_idxs)),
+            (np.ones(len(train_df), dtype=np.float32), (all_users, all_items)),
             shape=(self.n_users, self.n_items),
         )
-        item_users_sparse = self.user_items_sparse.tocsr()
+
+        # Матрица только положительных взаимодействий (rating >= threshold) для обучения ALS
+        positive_df = train_df[train_df[self.rating_col] >= self.threshold]
+        positive_users = positive_df[self.user_id_col].map(self.user_to_index).values
+        positive_items = positive_df[self.movie_id_col].map(self.item_to_index).values
+        positive_ratings = positive_df[self.rating_col].values
+
+        train_sparse = csr_matrix(
+            (positive_ratings * self.alpha, (positive_users, positive_items)),
+            shape=(self.n_users, self.n_items),
+        )
 
         self.model = AlternatingLeastSquares(
             factors=self.factors,
@@ -70,7 +80,7 @@ class ImplicitALS(BaseRecommender):
             iterations=self.iterations,
             random_state=self.random_state,
         )
-        self.model.fit(item_users_sparse, show_progress=False)
+        self.model.fit(train_sparse, show_progress=False)
 
     def recommend(self, user_ids: list, n=10) -> dict[int, list[int]]:
         if self.model is None:
