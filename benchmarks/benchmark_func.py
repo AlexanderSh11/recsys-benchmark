@@ -74,8 +74,10 @@ def run_benchmark(
                 "pred_time": pred_time["elapsed_time"],
                 "train_mem_delta": train_mem["delta_memory_usage"],
                 "train_mem_peak": train_mem["peak_memory_usage"],
+                "train_mem_start": train_mem["start_rss"],
                 "pred_mem_delta": pred_mem["delta_memory_usage"],
                 "pred_mem_peak": pred_mem["peak_memory_usage"],
+                "pred_mem_start": pred_mem["start_rss"],
                 "recall": recall,
                 "ndcg": ndcg,
             }
@@ -141,8 +143,10 @@ def params_search(
                 "pred_time": mean_result(results_param, "pred_time"),
                 "train_mem_delta": mean_result(results_param, "train_mem_delta"),
                 "train_mem_peak": mean_result(results_param, "train_mem_peak"),
+                "train_mem_start": mean_result(results_param, "train_mem_start"),
                 "pred_mem_delta": mean_result(results_param, "pred_mem_delta"),
                 "pred_mem_peak": mean_result(results_param, "pred_mem_peak"),
+                "pred_mem_start": mean_result(results_param, "pred_mem_start"),
                 f"recall@{k}": mean_result(results_param, "recall"),
                 f"ndcg@{k}": mean_result(results_param, "ndcg"),
             }
