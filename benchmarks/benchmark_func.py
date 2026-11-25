@@ -63,7 +63,7 @@ def run_benchmark(
 
         metrics = RecsMetrics(recs, known_test)
         recall = metrics.recall_at_k(k=k, threshold=threshold)
-        ndcg = metrics.ndcg_at_k(k=k)
+        ndcg = metrics.ndcg_at_k(k=k, threshold=threshold)
 
         results.append(
             {
