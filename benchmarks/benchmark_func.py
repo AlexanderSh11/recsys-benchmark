@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from metrics.metrics import MatrixMetrics, RecsMetrics
+from metrics.metrics import RecsMetrics
 from utils.memory_usage import memory_usage
 from utils.timer import timer
 
@@ -54,14 +54,14 @@ def run_benchmark(
         ):
             recs = model.recommend(test_users, n=k)
 
-        pred_matrix = model.get_pred_matrix()
-        if pred_matrix is not None:
-            test_matrix = build_test_matrix(model, test)
-            metrics = MatrixMetrics(pred_matrix, test_matrix)
-        else:
-            test_matrix = None
-            metrics = RecsMetrics(recs, test)
+        known_users = set(train[model.user_id_col].unique())
+        known_items = set(train[model.movie_id_col].unique())
+        known_test = test[
+            test[model.user_id_col].isin(known_users)
+            & test[model.movie_id_col].isin(known_items)
+        ]
 
+        metrics = RecsMetrics(recs, known_test)
         recall = metrics.recall_at_k(k=k, threshold=threshold)
         ndcg = metrics.ndcg_at_k(k=k)
 
@@ -80,7 +80,7 @@ def run_benchmark(
                 "ndcg": ndcg,
             }
         )
-        del pred_matrix, metrics, recs, test_matrix, model
+        del metrics, recs, model
         gc.collect()
 
     return results
